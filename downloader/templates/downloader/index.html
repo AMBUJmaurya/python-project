@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aaisha Downloader</title>
+    <script>
+        function downloadContent(event) {
+            event.preventDefault();
+            var url = document.getElementById('url').value;
+            var formData = new FormData();
+            formData.append('url', url);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/download/', true);
+            xhr.responseType = 'blob';
+            xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var disposition = xhr.getResponseHeader('Content-Disposition');
+                    if (disposition && disposition.indexOf('attachment') !== -1) {
+                        var filename = disposition.split('filename=')[1].replace(/"/g, '');
+                        var blob = xhr.response;
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        document.getElementById('revolutions').innerText = 'Revolutions: 1';
+                    } else {
+                        var reader = new FileReader();
+                        reader.onload = function() {
+                            var data = JSON.parse(reader.result);
+                            document.getElementById('revolutions').innerText = 'Revolutions: ' + data.revolutions;
+                            alert('Error: ' + data.error);
+                        };
+                        reader.readAsText(xhr.response);
+                    }
+                }
+            };
+            xhr.send(formData);
+        }
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</head>
+<body>
+    <h1>Aaisha Downloader</h1>
+    <form id="downloadForm" onsubmit="downloadContent(event)">
+        <label for="url">Paste Instagram, YouTube, or Facebook URL:</label><br>
+        <input type="text" id="url" name="url" required style="width: 400px;">
+        <button type="submit">Download</button>
+    </form>
+    <p id="revolutions"></p>
+</body>
+</html> 
